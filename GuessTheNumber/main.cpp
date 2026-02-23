@@ -2,6 +2,9 @@
 #include <random>
 #include <string>
 #include <cstdlib>
+#include <fstream>
+#include <vector>
+#include <algorithm>
 
 // Description:
 // A simple GuessTheNumber game in console, with persistence of max score and cumulative score system.
@@ -72,6 +75,43 @@ Difficult getStruct(char difficult){
     return diff;
 }
 
+void saveScore(int score){
+    std::vector<int> scores;
+    std::fstream scoreFile;
+
+    scoreFile.open("records.txt", std::ios_base::in);
+
+    if (!scoreFile){
+        std::ofstream temp("records.txt");
+        temp.close();
+        scoreFile.open("records.txt", std::ios_base::in);
+    }
+    
+
+    int num;
+    if (scoreFile.is_open()) {
+        while (scoreFile >> num) {
+            if (num == score) {
+                scoreFile.close();
+                return;
+            }
+            scores.push_back(num);
+        }
+        scoreFile.close();
+        scoreFile.clear();
+    }
+
+    scores.push_back(score);
+    std::sort(scores.begin(), scores.end(), std::greater<int>());
+
+    scoreFile.open("records.txt", std::ios_base::out | std::ios_base::trunc);
+    if (scoreFile.is_open()){
+        for (const int& n : scores){
+            scoreFile << n << "\n";
+        }
+    }
+}
+
 void play(){
     std::string trash;
     char difficult;
@@ -107,28 +147,57 @@ void play(){
     std::getline(std::cin, trash);
     
     if (save == 'Y'){
-        std::cout << "Saving..." << std::endl; // Score saving code goes here :p
+        saveScore(score);
+    }
+}
+
+void leaderboard(){
+    std::system("clear");
+    std::cout << "LEADERBOARD\n\n";
+
+    std::fstream scoreFile;
+
+    scoreFile.open("records.txt", std::ios_base::in);
+
+    if (!scoreFile) {
+        std::ofstream temp("records.txt");
+        temp.close();
+        scoreFile.open("records.txt", std::ios_base::in);
     }
 
-    return;
+    if (scoreFile.is_open()) {
+        int num;
+        int index = 1;
+        while (scoreFile >> num) {
+            std::cout << index << ". " << num << "\n";
+            index++;
+        }
+        scoreFile.close();
+    }
+
+    std::cout << "\nPress ENTER to return\n";
+    std::cin.get();
 }
+
 int main(){
     char select;
+    std::string trash;
     while (true){
         std::system("clear");
         
         std::cout << "Guess The Number | v1.0\n\n";
-        std::cout << "Options:\n1. Play\n2. See leaderboard\n3. Exit\n\n";
+        std::cout << "Options:\n1. Play\n2. Leaderboard\n3. Exit\n\n";
         std::cout << "Selection: ";
         
         std::cin >> select;
+        std::getline(std::cin, trash);
 
         switch (select) {
             case '1':
                 play();
                 break;
             case '2':
-                std::cout << "Leaderboard..." << std::endl;
+                leaderboard();
                 break;
             case '3':
                 std::cout << "Goodbye!" << std::endl;
